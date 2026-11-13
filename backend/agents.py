@@ -183,6 +183,24 @@ def gemini_parse(raw: str, source: str, base: dict) -> tuple[dict, str]:
         for k, v in data.items():
             if k in base and k not in {"mobile_number", "source_platform"} and v is not None and type(v) is type(base[k]):
                 merged[k] = v
+        # Normalize fields that have strict Literal requirements
+        if isinstance(merged.get("gender"), str):
+            merged["gender"] = merged["gender"].strip().capitalize()
+            if merged["gender"] not in ("Female", "Male"):
+                merged["gender"] = base.get("gender", "Female")
+        if isinstance(merged.get("work_type"), str):
+            wt = merged["work_type"].strip().title()
+            merged["work_type"] = wt if wt in ("Live In", "Full Time", "Part Time") else base.get("work_type", "Full Time")
+        if isinstance(merged.get("citizenship"), str):
+            c = merged["citizenship"].strip().title()
+            merged["citizenship"] = c if c in ("India", "Nepal") else "India"
+        if isinstance(merged.get("app_language"), str):
+            al = merged["app_language"].strip().title()
+            merged["app_language"] = al if al in ("Hindi", "Hinglish", "English", "Bengali", "Kannada") else base.get("app_language", "Hinglish")
+        if isinstance(merged.get("job_roles"), list):
+            valid_roles = {"Housekeeping", "Cooking", "Elderly Care", "Baby Care", "Physiotherapist"}
+            clean_roles = [r.title() for r in merged["job_roles"] if isinstance(r, str) and r.title() in valid_roles]
+            merged["job_roles"] = clean_roles or base.get("job_roles", ["Housekeeping"])
         return merged, provider
     except Exception as exc:  # noqa: BLE001
         print(f"[gemini] fallback to deterministic parser: {exc.__class__.__name__}")
