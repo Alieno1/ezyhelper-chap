@@ -8,5 +8,6 @@ node_modules/
 .neon
 .env.local
 *.pdf
-INTERVIEW_PITCH_GUIDE.md
-PRODUCTION_DOCUMENTATION.md
+*.html
+*_GUIDE.md
+*_DOCUMENTATION.md

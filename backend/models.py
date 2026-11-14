@@ -8,7 +8,7 @@ Models:
 """
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, JSON, String
 from sqlalchemy.orm import Mapped, mapped_column
 from database import Base
@@ -17,6 +17,11 @@ from database import Base
 def _uuid() -> str:
     """Generates a unique UUID4 string for primary keys."""
     return str(uuid.uuid4())
+
+
+def _utcnow() -> datetime:
+    """Returns current UTC timestamp without timezone info for SQLAlchemy compatibility."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class Helper(Base):
@@ -39,7 +44,7 @@ class Helper(Base):
     rating_badge: Mapped[str] = mapped_column(String(20), default="New")
     jobs_done_count: Mapped[int] = mapped_column(Integer, default=0)
     total_earnings_inr: Mapped[float] = mapped_column(Float, default=0.0)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
 
     # =========================================================================
     # Step 1: Basic Identity & Demographics
@@ -127,7 +132,7 @@ class WhatsAppLog(Base):
     sender: Mapped[str] = mapped_column(String(16))  # AGENT_AISENSY | HELPER
     message_text: Mapped[str] = mapped_column(String(1000))
     quick_reply_chips: Mapped[list] = mapped_column(JSON, default=list)
-    timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    timestamp: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
 
 
 class SourcingCampaign(Base):
@@ -144,4 +149,4 @@ class SourcingCampaign(Base):
     cost_per_raw_lead_inr: Mapped[float] = mapped_column(Float, default=40.0)        # ₹2,000 / 50 = ₹40
     cost_per_active_lead_inr: Mapped[float] = mapped_column(Float, default=200.0)     # ₹2,000 / 10 = ₹200
     final_cac_per_onboarded_helper_inr: Mapped[float] = mapped_column(Float, default=1000.0) # ₹2,000 / 2 = ₹1,000
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)

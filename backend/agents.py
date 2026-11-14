@@ -14,12 +14,13 @@ import os
 import random
 import re
 import string
-from datetime import datetime
+import threading
+from datetime import datetime, timezone
 
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from models import Helper, SourcingCampaign, WhatsAppLog
+from models import Helper, SourcingCampaign, WhatsAppLog, _utcnow
 from schemas import CustomerRequirement, MatchResult
 
 # ---------------------------------------------------------------------------
@@ -188,11 +189,12 @@ def deterministic_parse(raw: str, source: str) -> dict:
         prefs.append("Hygienic Environment")
 
     app_lang = "Kannada" if "Kannada" in langs[:1] else "Bengali" if "Bengali" in langs[:1] else "Hinglish"
-    dob_year = datetime.utcnow().year - (age or 30)
+    dob_year = _utcnow().year - (age or 30)
 
     return {
         "source_platform": source,
         "app_language": app_lang,
+        "citizenship": "India",
         "first_name": first,
         "last_name": last,
         "mobile_number": phone,
@@ -340,7 +342,19 @@ def _wa(db: Session, hid: str, sender: str, text: str, chips: list[str] | None =
 # 4. Multi-Stage Pipeline Execution (Autopilot vs Manual)
 # ---------------------------------------------------------------------------
 
+# Serializes pipeline runs: concurrent runs would otherwise wipe/update the same rows
+# at the same time (StaleDataError). Overlapping requests now queue instead of failing.
+_PIPELINE_LOCK = threading.Lock()
+
+
 def run_pipeline(db: Session, autopilot: bool = False) -> dict:
+    """Thread-safe entry point: only one pipeline run executes at a time."""
+    with _PIPELINE_LOCK:
+        db.expire_all()
+        return _run_pipeline(db, autopilot)
+
+
+def _run_pipeline(db: Session, autopilot: bool = False) -> dict:
     """Executes the recruitment funnel.
     
     Stages:
@@ -506,7 +520,7 @@ def verify_kyc(db: Session, h: Helper) -> Helper:
     h.kyc_masked_id = "[Aadhaar Redacted]"
     h.identity_proof_status = h.address_proof_status = "Verified"
     h.kyc_blue_tick = True
-    h.kyc_verified_at = datetime.utcnow()
+    h.kyc_verified_at = _utcnow()
     h.profile_completion_pct = max(h.profile_completion_pct, 95)
     h.profile_quality_score = min(100, h.profile_quality_score + 25)
 

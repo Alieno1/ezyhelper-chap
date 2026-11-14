@@ -135,7 +135,7 @@ class CustomerRequirement(BaseModel):
     roles: list[JobRole] = []
     languages: list[str] = []
     work_type: Optional[WorkType] = None
-    budget_inr: Optional[int] = None
+    budget_inr: Optional[int] = Field(default=None, gt=0, description="Monthly budget in INR (must be positive)")
     must_cook_nonveg: bool = False
     sleep_by_10pm: bool = False
     hygienic: bool = False
