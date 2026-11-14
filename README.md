@@ -28,38 +28,101 @@ Traditional domestic staff recruitment requires human recruiters to spend hours 
 
 ## 🏛️ System Architecture
 
+### 1. End-to-End Data & Integration Flow
+
+```mermaid
+flowchart TD
+    subgraph Sourcing ["1. Sourcing Layer"]
+        A["Job Portals (Apna / WorkIndia)"] -->|Raw Candidate Text| B["Agentic Ingestion Engine"]
+    end
+
+    subgraph Extraction ["2. Intelligence Layer"]
+        B -->|Unstructured Biodata| C["Google Gemini LLM Parser"]
+        C -->|Pydantic 5-Step Validation| D["Structured Candidate (HLPRINxxxxx)"]
+    end
+
+    subgraph Storage ["3. Cloud Persistence Layer"]
+        D -->|Pooled Connection| E[("Neon Serverless PostgreSQL 16")]
+    end
+
+    subgraph Execution ["4. Autonomous Micro-Engines"]
+        E <-->|Trigger & Message Log| F["AiSensy / Meta WhatsApp Agent"]
+        E <-->|Aadhaar Masking & Blue Tick| G["Digio UIDAI KYC Verifier"]
+        E <-->|Bangalore Geo-Assignment| H["Field Officer Geo-Router (Client)"]
+        E <-->|Multi-Factor Scoring| I["Customer Propensity Matcher"]
+    end
+
+    subgraph Presentation ["5. Presentation & Control Layer"]
+        F & G & H & I <-->|REST APIs / CORS| J["FastAPI Backend (Render)"]
+        J <-->|React Query / Server Actions| K["Next.js 14 CHAP Dashboard (Vercel)"]
+    end
+
+    classDef highlight fill:#2563eb,stroke:#1d4ed8,stroke-width:2px,color:#fff;
+    classDef storage fill:#059669,stroke:#047857,stroke-width:2px,color:#fff;
+    class C,F,G,H,I highlight;
+    class E storage;
 ```
-                       ┌───────────────────────────────┐
-                       │   Job Portals Sourcing        │
-                       │   (Apna / WorkIndia Mock)     │
-                       └───────────────┬───────────────┘
-                                       │ Raw unformatted candidate text
-                                       ▼
-                       ┌───────────────────────────────┐
-                       │  Gemini LLM Extraction Engine │
-                       │  (Pydantic 5-Step Partner DB) │
-                       └───────────────┬───────────────┘
-                                       │ HLPRINxxxxx Schema
-                                       ▼
-                       ┌───────────────────────────────┐
-                       │    Neon Serverless Postgres   │
-                       │    (Permanent Cloud Storage)  │
-                       └───────┬───────────────┬───────┘
-                               │               │
-            ┌──────────────────┴──┐         ┌──┴──────────────────┐
-            ▼                     ▼         ▼                     ▼
-┌───────────────────────┐ ┌───────────────┐ ┌─────────────┐ ┌────────────────┐
-│   AiSensy / Meta      │ │  Digio UIDAI  │ │ FO Client   │ │  Customer      │
-│   WhatsApp Lifecycle  │ │  KYC Engine   │ │ Geo-Router  │ │  Propensity    │
-│   (Digital CV Dispatched│ (Aadhaar Mask)│ │ (Bangalore) │ │  Matcher (0-100)│
-└───────────────────────┘ └───────────────┘ └─────────────┘ └────────────────┘
-            │                     │         │                     │
-            └─────────────────────┼─────────┴─────────────────────┘
-                                  ▼
-                       ┌───────────────────────────────┐
-                       │  Next.js 14 Command Center    │
-                       │  (Dual Autopilot / Manual UI) │
-                       └───────────────────────────────┘
+
+---
+
+### 2. Autonomous Verification & Onboarding Sequence
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Recruiter as Recruiter / Autopilot
+    participant Agent as CHAP FastAPI Engine
+    participant LLM as Gemini 3.5 Flash
+    participant DB as Neon PostgreSQL
+    participant WA as WhatsApp (AiSensy/Meta)
+    participant KYC as Digio (UIDAI OKYC)
+    participant FO as Field Officer (Client)
+
+    Recruiter->>Agent: POST /api/agent/run-sourcing-pipeline?autopilot=true
+    Agent->>LLM: Parse raw candidate resume & skills
+    LLM-->>Agent: Validated 5-Step JSON (Quality > 80%)
+    Agent->>DB: INSERT into helpers & campaign tables
+    
+    rect rgb(240, 249, 255)
+        note over Agent,WA: Step 1: Conversational Qualification
+        Agent->>WA: Send Automated WhatsApp Ping + Interactive Chips
+        WA-->>Agent: Helper replies "Yes, interested"
+        Agent->>WA: Auto-generate & dispatch Free Digital CV Link
+        Agent->>DB: Log WhatsApp conversation history
+    end
+
+    rect rgb(245, 243, 255)
+        note over Agent,KYC: Step 2: Identity & Compliance
+        Agent->>KYC: Submit candidate for Aadhaar Verification
+        KYC-->>Agent: UIDAI Verified, Return [Aadhaar Redacted]
+        Agent->>DB: Set kyc_blue_tick = True
+    end
+
+    rect rgb(236, 253, 245)
+        note over Agent,FO: Step 3: Physical Address Docketing
+        Agent->>FO: Check city == 'Bangalore'
+        Agent->>FO: Assign to Field Officer Client (Bangalore South)
+        Agent->>DB: Update fo_assigned = 'Client (FO - Bangalore South)'
+    end
+
+    Agent-->>Recruiter: 200 OK (Full Pipeline Completed Autonomously)
+```
+
+---
+
+### 3. Customer Acquisition Cost (CAC) Funnel Progression
+
+```mermaid
+flowchart LR
+    A["Portal Spend\n₹2,000"] -->|Scrape & Intake| B["Contacts Unlocked\n50 Candidates (@₹40/CV)"]
+    B -->|WhatsApp Ping| C["WhatsApp Active\n10 Conversed (@₹200/active)"]
+    C -->|Qualification| D["Job Seekers\n5 Shortlisted"]
+    D -->|KYC & Geo-Docketing| E["Bangalore Conversions\n2 Verified Helpers\n(Final CAC: ₹1,000/helper)"]
+
+    classDef funnel fill:#f8fafc,stroke:#64748b,stroke-width:2px;
+    classDef final fill:#16a34a,stroke:#15803d,stroke-width:2px,color:#fff;
+    class A,B,C,D funnel;
+    class E final;
 ```
 
 ---
@@ -238,3 +301,4 @@ Frontend will be available at `http://localhost:3000`.
 
 ## 📄 License
 This repository is proprietary software developed for **EzyHelpers**.
+
