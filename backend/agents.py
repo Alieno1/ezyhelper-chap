@@ -65,21 +65,31 @@ RAW_PROFILES = [
              "sunday off, hygienic, sleep by 10pm, senior secondary, bus, +91 9000010010"),
 ]
 
-# Keyword dictionaries for domain token matching
+# Keyword dictionaries for domain token matching (supports spaced, hyphenated, and unspaced variants)
 ROLE_KEYS = {
-    "Housekeeping": ["housekeeping", "cleaning", "jhadu"],
-    "Cooking": ["cook", "biryani", "roti"],
-    "Elderly Care": ["elderly", "patient care"],
-    "Baby Care": ["baby", "nanny", "infant"],
-    "Physiotherapist": ["physio"],
+    "Housekeeping": ["housekeeping", "house keeping", "housekeeper", "cleaning", "cleaner", "jhadu", "pocha", "maid", "safai", "utensil", "bartan", "ghar ka kaam"],
+    "Cooking": ["cook", "cooking", "chef", "biryani", "roti", "khana", "rasoi", "meal", "kitchen", "bawarchi"],
+    "Elderly Care": ["elderly", "eldercare", "elderlycare", "patient care", "patientcare", "senior", "old age", "oldage", "parent", "caretaker", "caregiver", "attendant", "bujurg"],
+    "Baby Care": ["baby", "babycare", "nanny", "infant", "newborn", "child", "childcare", "kid", "japa", "japamaid", "babysitter", "ayah", "baccha"],
+    "Physiotherapist": ["physio", "physiotherapist", "physiotherapy", "rehab", "therapy", "stroke", "paralysis"],
 }
 LANG_KEYS = {
-    "Hindi": ["hindi"],
-    "English": ["english"],
-    "Bengali": ["bengali", "bangla"],
-    "Kannada": ["kannada"],
-    "Odia": ["odia"],
-    "Urdu": ["urdu"],
+    "Hindi": ["hindi", "bihari", "bhojpuri", "maithili", "north indian", "northindian", "marwari", "punjabi", "haryanvi", "rajasthani", "up family", "hinglish"],
+    "English": ["english", "eng"],
+    "Bengali": ["bengali", "bangla", "bangali", "kolkata", "bong"],
+    "Kannada": ["kannada", "kannad", "kannadiga", "local language"],
+    "Odia": ["odia", "oriya", "odisha"],
+    "Urdu": ["urdu", "muslim"],
+}
+LOCALITY_ALIASES = {
+    "sarjapur road": ["sarjapur road", "sarjapurroad", "sarjapur", "sarjapura"],
+    "bannerghatta road": ["bannerghatta road", "bannerghattaroad", "bannerghatta", "bg road", "bgroad"],
+    "hsr layout": ["hsr layout", "hsrlayout", "h s r layout", "hsr"],
+    "whitefield": ["whitefield", "white field", "whitefeild"],
+    "koramangala": ["koramangala", "kormangala", "koramangla"],
+    "salt lake": ["salt lake", "saltlake"],
+    "patia": ["patia"],
+    "dwarka": ["dwarka"],
 }
 EDU_KEYS = [
     ("post graduate", "Post Graduate"),
@@ -123,8 +133,23 @@ def _chance_code() -> str:
 
 
 def _has(text: str, words: list[str]) -> bool:
-    """Returns True if any keyword exists in the input text."""
-    return any(w in text for w in words)
+    """Returns True if any keyword exists in spaced or unspaced normalized text."""
+    compact = re.sub(r"[^a-z0-9]+", "", text.lower())
+    norm = re.sub(r"[^a-z0-9]+", " ", text.lower())
+    for w in words:
+        wl = w.lower()
+        w_compact = re.sub(r"[^a-z0-9]+", "", wl)
+        if wl in norm or wl in text.lower() or (len(w_compact) >= 3 and w_compact in compact):
+            return True
+    return False
+
+
+def _format_locality(loc: str | None) -> str | None:
+    """Normalizes locality display casing (e.g., 'HSR Layout' vs Title Case)."""
+    if not loc:
+        return None
+    clean = loc.strip()
+    return "HSR Layout" if clean.lower() in ("hsr layout", "hsrlayout", "hsr") else clean.title()
 
 
 # ---------------------------------------------------------------------------
@@ -159,6 +184,7 @@ def deterministic_parse(raw: str, source: str) -> dict:
 
     locality = next((k for k in LOCALITIES if k in t), None)
     pin, city, state, _ = LOCALITIES.get(locality, (None, "Bangalore", "Karnataka", ""))
+    loc_display = _format_locality(locality)
 
     roles = [r for r, keys in ROLE_KEYS.items() if _has(t, keys)] or ["Housekeeping"]
     if "Physiotherapist" in roles and "Elderly Care" not in roles and "elderly" in t:
@@ -204,19 +230,19 @@ def deterministic_parse(raw: str, source: str) -> dict:
         "languages_known": langs,
         "job_roles": roles,
         "base_pincode": pin,
-        "base_locality": locality.title() if locality else None,
+        "base_locality": loc_display,
         "base_city": city,
         "base_state": state,
         "current_city": city,
         "current_state": state,
         "current_pincode": pin,
-        "current_street_house": f"{locality.title()} (house details pending)" if locality else None,
+        "current_street_house": f"{loc_display} (house details pending)" if loc_display else None,
         "gender": "Female" if female else "Male",
         "experience_years": exp,
         "education_level": edu,
         "marital_status": marital,
         "local_commute_type": commute,
-        "preferred_localities": [locality.title()] if locality else [],
+        "preferred_localities": [loc_display] if loc_display else [],
         "core_skills": skills,
         "tasks_dos": dos,
         "tasks_donts": donts,
@@ -312,6 +338,34 @@ def gemini_parse(raw: str, source: str, base: dict) -> tuple[dict, str]:
             valid_roles = {"Housekeeping", "Cooking", "Elderly Care", "Baby Care", "Physiotherapist"}
             clean_roles = [r.title() for r in merged["job_roles"] if isinstance(r, str) and r.title() in valid_roles]
             merged["job_roles"] = clean_roles or base.get("job_roles", ["Housekeeping"])
+
+        # Preserve canonical deterministic tags for preferences, tasks, skills, and languages
+        lang_map = {"bangla": "Bengali", "oriya": "Odia"}
+        if isinstance(merged.get("languages_known"), list):
+            norm_langs = list(dict.fromkeys(
+                list(base.get("languages_known", []))
+                + [lang_map.get(x.strip().lower(), x.strip().title()) for x in merged["languages_known"] if isinstance(x, str) and x.strip()]
+            ))
+            merged["languages_known"] = norm_langs or base.get("languages_known", ["Hindi"])
+
+        for canonical_list_field in ("special_preferences", "tasks_donts", "tasks_dos", "core_skills"):
+            merged[canonical_list_field] = list(base.get(canonical_list_field, []))
+
+        # Normalize casing on names, cities, states, and localities returned by LLMs
+        for title_field in ("first_name", "last_name", "base_locality", "base_state", "current_state",
+                            "education_level", "marital_status", "local_commute_type"):
+            val = merged.get(title_field)
+            if isinstance(val, str) and val.strip():
+                merged[title_field] = _format_locality(val) if title_field == "base_locality" else val.strip().title()
+
+        for city_field in ("base_city", "current_city"):
+            val = merged.get(city_field)
+            if isinstance(val, str) and val.strip():
+                c_norm = val.strip().title()
+                merged[city_field] = "Bangalore" if c_norm in ("Bangalore", "Bengaluru") else c_norm
+
+        if merged.get("base_locality"):
+            merged["preferred_localities"] = [merged["base_locality"]]
 
         return merged, provider
 
@@ -562,31 +616,122 @@ def assign_fo(db: Session, h: Helper) -> Helper:
 # 7. Customer Propensity Matching Engine (0-100% Score)
 # ---------------------------------------------------------------------------
 
+def _smart_extract_locality(text: str, explicit_loc: str | None = None) -> str:
+    """Finds canonical locality from spaced, hyphenated, or unspaced text."""
+    if explicit_loc:
+        el = explicit_loc.strip().lower()
+        for canon, aliases in LOCALITY_ALIASES.items():
+            if el == canon or any(a in el for a in aliases):
+                return canon
+        return el
+    compact = re.sub(r"[^a-z0-9]+", "", text.lower())
+    norm = re.sub(r"[^a-z0-9]+", " ", text.lower())
+    for canon, aliases in LOCALITY_ALIASES.items():
+        for alias in aliases:
+            ac = re.sub(r"[^a-z0-9]+", "", alias)
+            if alias in norm or (len(ac) >= 3 and ac in compact):
+                return canon
+    return ""
+
+
+def _smart_extract_work_type(text: str, explicit_wt: str | None = None) -> str | None:
+    """Detects Live In, Full Time, or Part Time regardless of spaces, hyphens, or casing."""
+    if explicit_wt in ("Live In", "Full Time", "Part Time"):
+        return explicit_wt
+    compact = re.sub(r"[^a-z0-9]+", "", text.lower())
+    if any(k in compact for k in ("livein", "24hr", "24x7", "247", "stayin", "24hour")):
+        return "Live In"
+    if any(k in compact for k in ("parttime", "halfday")):
+        return "Part Time"
+    if any(k in compact for k in ("fulltime", "fullday", "dayshift", "8hr", "9hr", "10hr", "12hr")):
+        return "Full Time"
+    return None
+
+
+def _smart_extract_budget(text: str, explicit_budget: int | None = None) -> int | None:
+    """Extracts salary budget from spaced/unspaced text including 'k' shorthand (e.g., 35k, budget35000, ₹22,000)."""
+    if explicit_budget is not None:
+        return explicit_budget
+    tl = text.lower()
+    # Check 'k' shorthand first: e.g., '25k', '₹35k', 'budget 22k', 'budget25k'
+    mk = re.search(r"(?:budget|salary|₹|rs\.?|inr|under|upto)?\s*\b(\d{2})\s*k\b", tl)
+    if mk:
+        return int(mk.group(1)) * 1000
+    # Check explicit currency/budget prefix with or without spaces: 'budget35000', '₹ 22,000', 'rs.24000'
+    m = re.search(r"(?:budget|salary|sal|₹|rs\.?|inr|under|upto)\s*[:=-]?\s*₹?\s*([\d,]{4,7})", tl)
+    if m:
+        val = int(m.group(1).replace(",", ""))
+        if val > 0:
+            return val
+    # Fallback: standalone 5-digit salary number in text (e.g., 15000 to 99000)
+    m_bare = re.search(r"\b([1-9]\d,\d{3}|[1-9]\d{4})\b", tl)
+    if m_bare:
+        return int(m_bare.group(1).replace(",", ""))
+    return None
+
+
+def _helper_refuses_nonveg(h: Helper) -> bool:
+    """Checks if helper is Pure Veg / refuses non-veg across canonical or LLM-generated tags."""
+    donts_str = " ".join(h.tasks_donts or []).lower()
+    return "non-veg" in donts_str or "non veg" in donts_str or "pure veg" in donts_str or "meat" in donts_str or "fish" in donts_str
+
+
+def _helper_sleeps_by_10pm(h: Helper) -> bool:
+    """Checks if helper has a 10 PM sleep preference across canonical or LLM-generated tags."""
+    prefs_str = " ".join(h.special_preferences or []).lower()
+    return "10:00 pm" in prefs_str or "10 pm" in prefs_str or "10pm" in prefs_str
+
+
+def _helper_is_hygienic(h: Helper) -> bool:
+    """Checks if helper has verified hygiene preference across canonical or LLM-generated tags."""
+    prefs_str = " ".join(h.special_preferences or []).lower()
+    return "hygien" in prefs_str or "clean" in prefs_str
+
+
 def match_customer(db: Session, req: CustomerRequirement) -> list[MatchResult]:
     """Matches verified candidates to customer requests using multi-factor scoring.
     
-    Weights:
-    - Role match (Cooking, Housekeeping, etc.): 30%
-    - Language compatibility: 15%
-    - Locality & City proximity: 15%
-    - Work Type (Full Time / Live In): 10%
-    - Salary budget alignment: 10%
-    - Special constraints (Non-veg, 10 PM sleep, hygiene): 20%
-    - Blue Tick KYC trust bonus: +3%
+    Smart NLP features:
+    - Tolerates missing spaces ('fulltimecookhousekeeping', 'hsrlayout', 'budget35000')
+    - Tolerates any casing ('UPPERCASE', 'lowercase', 'MiXeD') and hyphens ('Full-Time')
+    - Maps regional family terms ('Bihari', 'North Indian', 'Marwari' -> Hindi; 'Bangali' -> Bengali)
+    - Distinguishes 'pure veg / no non-veg' from 'must cook fish/non-veg'
+    - Handles flexible sleep schedules ('sleep by 10 PM' vs 'sleep by 12 AM')
     """
     text = req.text.lower()
+    compact = re.sub(r"[^a-z0-9]+", "", text)
+
     roles = set(req.roles) or {r for r, k in ROLE_KEYS.items() if _has(text, k)}
     langs = set(req.languages) or {l for l, k in LANG_KEYS.items() if _has(text, k)}
-    loc = (req.locality or next((k for k in LOCALITIES if k in text), "") or "").lower()
-    nonveg = req.must_cook_nonveg or bool(re.search(r"non[- ]?veg|fish|chicken|biryani", text))
-    sleep10 = req.sleep_by_10pm or bool(re.search(r"sleep\w* by 10", text))
-    hyg = req.hygienic or "hygien" in text
-    wt = req.work_type or next((w for w in ("Live In", "Full Time", "Part Time") if w.lower() in text), None)
+    loc = _smart_extract_locality(text, req.locality)
+    wt = _smart_extract_work_type(text, req.work_type)
+    budget = _smart_extract_budget(text, req.budget_inr)
 
-    budget = req.budget_inr
-    if budget is None:
-        m = re.search(r"(?:budget|₹|rs\.?)\s*([\d,]{4,7})", text)
-        budget = int(m.group(1).replace(",", "")) if m else None
+    # Smart dietary detection: check for pure-veg / negation before non-veg
+    wants_pure_veg = bool(
+        re.search(r"no\s*non[- ]?veg|without\s*non[- ]?veg|pure[- ]?veg|veg\s*only|strictly\s*veg|no\s*(?:meat|fish)", text)
+        or any(k in compact for k in ("nononveg", "pureveg", "vegonly", "strictlyveg"))
+    )
+    nonveg = req.must_cook_nonveg or (
+        not wants_pure_veg
+        and (
+            bool(re.search(r"non[- ]?veg|fish|chicken|mutton|meat|biryani|egg|seafood", text))
+            or any(k in compact for k in ("nonveg", "fish", "chicken", "mutton", "biryani"))
+        )
+    )
+
+    # Smart sleep schedule detection (10 PM early sleep vs 11 PM / 12 AM late schedule)
+    sleep10 = req.sleep_by_10pm or bool(
+        re.search(r"sleep\w*\s*(?:by|at|around)?\s*(?:9|10)\s*(?:pm|p\.m\.?)?", text)
+        or any(k in compact for k in ("sleepby10", "sleep10", "sleepsby10", "sleepat10", "10pmsleep"))
+    )
+    sleep_late = bool(
+        re.search(r"sleep\w*\s*(?:by|at|around)?\s*(?:11|12)\s*(?:pm|am)?|midnight", text)
+        or any(k in compact for k in ("sleepby11", "sleepby12", "sleep11", "sleep12", "12am", "11pm"))
+    )
+
+    # Smart hygiene detection (including common typos like 'hygenic', 'hygene')
+    hyg = req.hygienic or any(k in compact for k in ("hygien", "hygenic", "hygene", "neatandclean", "saaf"))
 
     out = []
     for h in db.scalars(select(Helper).where(Helper.is_available_for_work.is_(True))):
@@ -606,7 +751,8 @@ def match_customer(db: Session, req: CustomerRequirement) -> list[MatchResult]:
 
         # 2. Languages Known (15 points)
         if langs:
-            hit = langs & set(h.languages_known)
+            helper_langs = {lg.title() for lg in (h.languages_known or [])}
+            hit = langs & helper_langs
             score += 15 * len(hit) / len(langs)
             if hit:
                 pros.append(f"✅ Speaks {'/'.join(sorted(hit))}")
@@ -618,12 +764,12 @@ def match_customer(db: Session, req: CustomerRequirement) -> list[MatchResult]:
         # 3. Location Proximity (15 points)
         if loc and (h.base_locality or "").lower() == loc:
             score += 15
-            pros.append(f"✅ Lives in {h.base_locality}")
-        elif loc and h.base_city == "Bangalore":
+            pros.append(f"✅ Lives in {_format_locality(h.base_locality)}")
+        elif loc and (h.base_city or "").title() in ("Bangalore", "Bengaluru"):
             score += 8
             trade.append("⚠️ Different locality in Bangalore (commute)")
         elif loc:
-            trade.append(f"⚠️ Based in {h.base_city}, relocation needed")
+            trade.append(f"⚠️ Based in {(h.base_city or '').title()}, relocation needed")
         else:
             score += 7.5
 
@@ -650,9 +796,16 @@ def match_customer(db: Session, req: CustomerRequirement) -> list[MatchResult]:
 
         # 6. Dietary & Lifestyle Constraints (20 points)
         cons_total, cons_hit = 0, 0
-        if nonveg and "Cooking" in roles | set(h.job_roles):
+        if wants_pure_veg and "Cooking" in roles | set(h.job_roles):
             cons_total += 1
-            if "Non-Veg Cooking" in h.tasks_donts:
+            cons_hit += 1
+            if _helper_refuses_nonveg(h):
+                pros.append("✅ Strictly Pure Veg cook")
+            else:
+                pros.append("✅ Can cook Pure Veg meals")
+        elif nonveg and "Cooking" in roles | set(h.job_roles):
+            cons_total += 1
+            if _helper_refuses_nonveg(h):
                 trade.append("⚠️ Pure Veg / Does not cook non-veg or fish")
             else:
                 cons_hit += 1
@@ -660,15 +813,22 @@ def match_customer(db: Session, req: CustomerRequirement) -> list[MatchResult]:
 
         if sleep10:
             cons_total += 1
-            if "Sleep by 10:00 PM" in h.special_preferences:
+            if _helper_sleeps_by_10pm(h):
                 cons_hit += 1
                 pros.append("✅ Sleeps at 10 PM")
             else:
                 trade.append("⚠️ No fixed 10 PM sleep preference")
+        elif sleep_late:
+            cons_total += 1
+            if _helper_sleeps_by_10pm(h):
+                trade.append("⚠️ Prefers sleeping by 10 PM (early sleeper)")
+            else:
+                cons_hit += 1
+                pros.append("✅ Flexible for late evening schedule")
 
         if hyg:
             cons_total += 1
-            if "Hygienic Environment" in h.special_preferences:
+            if _helper_is_hygienic(h):
                 cons_hit += 1
                 pros.append("✅ Hygienic")
             else:
@@ -691,10 +851,13 @@ def match_customer(db: Session, req: CustomerRequirement) -> list[MatchResult]:
         else:
             rec = "Good match."
 
+        display_name = " ".join(
+            part.title() for part in f"{h.first_name or ''} {h.last_name or ''}".split()
+        )
         out.append(
             MatchResult(
                 helper_id=h.helper_id,
-                name=f"{h.first_name} {h.last_name or ''}".strip(),
+                name=display_name,
                 score=s,
                 pros=pros,
                 tradeoffs=trade,

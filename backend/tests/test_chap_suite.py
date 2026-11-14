@@ -76,7 +76,7 @@ class Test01DeterministicParser(unittest.TestCase):
         self.assertEqual(p["first_name"], "Rita")
         self.assertEqual(p["last_name"], "Das")
         self.assertEqual(p["age"], 34)
-        self.assertEqual(p["base_locality"], "Hsr Layout")
+        self.assertEqual(p["base_locality"], "HSR Layout")
         self.assertEqual(p["base_city"], "Bangalore")
         self.assertIn("Cooking", p["job_roles"])
         self.assertIn("Housekeeping", p["job_roles"])
@@ -123,6 +123,10 @@ class Test02LLMParserAndNormalization(unittest.TestCase):
         src, raw = agents.RAW_PROFILES[0]
         base = agents.deterministic_parse(raw, src)
         fake_llm_json = json.dumps({
+            "first_name": "lakshmi",
+            "last_name": "gowda",
+            "base_city": "bengaluru",
+            "base_locality": "whitefield",
             "gender": "  female ",
             "work_type": "live in",
             "citizenship": "nepal",
@@ -146,6 +150,10 @@ class Test02LLMParserAndNormalization(unittest.TestCase):
             merged, provider = agents.gemini_parse("raw bio", "Apna", base)
 
         self.assertEqual(provider, "openrouter")
+        self.assertEqual(merged["first_name"], "Lakshmi")
+        self.assertEqual(merged["last_name"], "Gowda")
+        self.assertEqual(merged["base_city"], "Bangalore")
+        self.assertEqual(merged["base_locality"], "Whitefield")
         self.assertEqual(merged["gender"], "Female")
         self.assertEqual(merged["work_type"], "Live In")
         self.assertEqual(merged["citizenship"], "Nepal")
@@ -317,6 +325,38 @@ class Test04PropensityMatcherAndEdgeCases(unittest.TestCase):
                 self.assertEqual(len(res), 10)
                 self.assertTrue(all(0 <= x["score"] <= 100 for x in res))
                 self.assertEqual(res, sorted(res, key=lambda x: x["score"], reverse=True))
+
+    def test_smart_unspaced_and_mixed_case_queries(self):
+        # 1. Completely unspaced UPPERCASE query with 'k' budget and 'hygenic' typo
+        r1 = client.post("/api/agent/match-customer", json={
+            "text": "BENGALIFAMILYINHSRLAYOUTLOOKINGFORFULLTIMECOOKHOUSEKEEPINGMUSTCOOKFISHNONVEGSLEEPBY10PMHYGENICBUDGET25K"
+        })
+        self.assertEqual(r1.status_code, 200)
+        res1 = r1.json()
+        self.assertEqual(res1[0]["name"], "Rita Das")
+        self.assertGreaterEqual(res1[0]["score"], 95)
+
+        # 2. Bihari family -> maps to Hindi, sleep by 12 AM -> flags early sleepers & rewards flexible helpers
+        r2 = client.post("/api/agent/match-customer", json={
+            "text": "Bihari family in HSR Layout looking for Full-Time Cook + Housekeeping, must cook fish/non-veg, sleep by 12 AM, hygienic, budget ₹35000"
+        })
+        self.assertEqual(r2.status_code, 200)
+        res2 = r2.json()
+        rita = next(x for x in res2 if x["name"] == "Rita Das")
+        sunita = next(x for x in res2 if x["name"] == "Sunita Devi")
+        self.assertIn("✅ Speaks Hindi", rita["pros"])
+        self.assertIn("✅ Full Time", rita["pros"])
+        self.assertIn("✅ Hygienic", rita["pros"])
+        self.assertTrue(any("Pure Veg" in t for t in sunita["tradeoffs"]))
+
+        # 3. Pure veg negation ('no non-veg, pureveg only') is not confused with non-veg
+        r3 = client.post("/api/agent/match-customer", json={
+            "text": "sarjapurroad parttime cookhousekeeping pureveg only no non-veg hindi budget20k"
+        })
+        self.assertEqual(r3.status_code, 200)
+        res3 = r3.json()
+        sunita_veg = next(x for x in res3 if x["name"] == "Sunita Devi")
+        self.assertIn("✅ Strictly Pure Veg cook", sunita_veg["pros"])
 
 
 class Test05SecurityComplianceAndConcurrency(unittest.TestCase):
