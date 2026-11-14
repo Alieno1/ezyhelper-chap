@@ -60,55 +60,43 @@ flowchart TD
         J <-->|React Query / Server Actions| K["Next.js 14 CHAP Dashboard (Vercel)"]
     end
 
-    classDef highlight fill:#2563eb,stroke:#1d4ed8,stroke-width:2px,color:#fff;
-    classDef storage fill:#059669,stroke:#047857,stroke-width:2px,color:#fff;
+    classDef highlight fill:#1e3a8a,stroke:#3b82f6,stroke-width:2px,color:#ffffff;
+    classDef storage fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#ffffff;
+    classDef defaultNode fill:#0f172a,stroke:#64748b,stroke-width:2px,color:#f8fafc;
+    class A,B,D,J,K defaultNode;
     class C,F,G,H,I highlight;
     class E storage;
 ```
 
 ---
 
-### 2. Autonomous Verification & Onboarding Sequence
+### 2. Autonomous Verification & Onboarding Flow
 
 ```mermaid
-sequenceDiagram
-    autonumber
-    actor Recruiter as Recruiter / Autopilot
-    participant Agent as CHAP FastAPI Engine
-    participant LLM as Gemini 3.5 Flash
-    participant DB as Neon PostgreSQL
-    participant WA as WhatsApp (AiSensy/Meta)
-    participant KYC as Digio (UIDAI OKYC)
-    participant FO as Field Officer (Client)
-
-    Recruiter->>Agent: POST /api/agent/run-sourcing-pipeline?autopilot=true
-    Agent->>LLM: Parse raw candidate resume & skills
-    LLM-->>Agent: Validated 5-Step JSON (Quality > 80%)
-    Agent->>DB: INSERT into helpers & campaign tables
+flowchart TD
+    Start(["⚡ Recruiter clicks 'Run Full Autopilot'"]) --> LLM["Stage 1: Google Gemini LLM Extraction\n• Parses raw text into 5-Step Schema\n• Assigns ID: HLPRINxxxxx (Quality 98%)"]
+    LLM --> DB1[("Save Candidate to Neon PostgreSQL")]
     
-    rect rgb(240, 249, 255)
-        note over Agent,WA: Step 1: Conversational Qualification
-        Agent->>WA: Send Automated WhatsApp Ping + Interactive Chips
-        WA-->>Agent: Helper replies "Yes, interested"
-        Agent->>WA: Auto-generate & dispatch Free Digital CV Link
-        Agent->>DB: Log WhatsApp conversation history
-    end
+    DB1 --> WA["Stage 2: WhatsApp Qualification (AiSensy/Meta)\n• Outbound ping with interactive reply chips\n• Candidate confirms: 'Yes, interested'\n• Dispatches Free Digital Resume link"]
+    
+    WA --> KYC["Stage 3: Digio UIDAI Government KYC\n• Validates Aadhaar via Government OKYC\n• Masks 12-digit number: [Aadhaar Redacted]\n• Stamps Verified 'Blue Tick' (kyc_blue_tick = True)"]
+    
+    KYC --> FO{"Is Candidate in Bangalore?"}
+    
+    FO -- Yes --> FOAssign["Stage 4: Field Officer Geo-Router\n• Dockets to 'Client (FO - Bangalore South)'\n• Triggers physical residence check"]
+    FO -- No --> Complete(["Stage 5: Remote Verified Pool Ready"])
+    
+    FOAssign --> Complete
 
-    rect rgb(245, 243, 255)
-        note over Agent,KYC: Step 2: Identity & Compliance
-        Agent->>KYC: Submit candidate for Aadhaar Verification
-        KYC-->>Agent: UIDAI Verified, Return [Aadhaar Redacted]
-        Agent->>DB: Set kyc_blue_tick = True
-    end
+    classDef darkBox fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
+    classDef startBox fill:#1e40af,stroke:#60a5fa,stroke-width:2px,color:#ffffff;
+    classDef successBox fill:#14532d,stroke:#4ade80,stroke-width:2px,color:#ffffff;
+    classDef decision fill:#854d0e,stroke:#facc15,stroke-width:2px,color:#ffffff;
 
-    rect rgb(236, 253, 245)
-        note over Agent,FO: Step 3: Physical Address Docketing
-        Agent->>FO: Check city == 'Bangalore'
-        Agent->>FO: Assign to Field Officer Client (Bangalore South)
-        Agent->>DB: Update fo_assigned = 'Client (FO - Bangalore South)'
-    end
-
-    Agent-->>Recruiter: 200 OK (Full Pipeline Completed Autonomously)
+    class Start startBox;
+    class LLM,WA,KYC,FOAssign darkBox;
+    class FO decision;
+    class Complete successBox;
 ```
 
 ---
@@ -122,9 +110,9 @@ flowchart LR
     C -->|Qualification| D["Job Seekers\n5 Shortlisted"]
     D -->|KYC & Geo-Docketing| E["Bangalore Conversions\n2 Verified Helpers\n(Final CAC: ₹1,000/helper)"]
 
-    classDef funnel fill:#f8fafc,stroke:#64748b,stroke-width:2px;
-    classDef final fill:#16a34a,stroke:#15803d,stroke-width:2px,color:#fff;
-    class A,B,C,D funnel;
+    classDef stage fill:#0f172a,stroke:#94a3b8,stroke-width:2px,color:#f8fafc;
+    classDef final fill:#14532d,stroke:#4ade80,stroke-width:2px,color:#ffffff;
+    class A,B,C,D stage;
     class E final;
 ```
 
