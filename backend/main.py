@@ -60,8 +60,8 @@ def campaign(db: Session = Depends(get_db)):
 
 
 @app.post("/api/agent/run-sourcing-pipeline", response_model=PipelineResult)
-def run_pipeline(db: Session = Depends(get_db)):
-    return agents.run_pipeline(db)
+def run_pipeline(autopilot: bool = False, db: Session = Depends(get_db)):
+    return agents.run_pipeline(db, autopilot=autopilot)
 
 
 @app.post("/api/agent/verify-kyc/{helper_id}", response_model=HelperOut)

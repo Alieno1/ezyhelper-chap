@@ -219,8 +219,8 @@ def _wa(db: Session, hid: str, sender: str, text: str, chips: list[str] | None =
     db.add(WhatsAppLog(helper_id=hid, sender=sender, message_text=text, quick_reply_chips=chips or []))
 
 
-def run_pipeline(db: Session) -> dict:
-    """Wipes demo data and executes the 4-stage funnel (2000 -> 50 -> 10 -> 5 -> 2)."""
+def run_pipeline(db: Session, autopilot: bool = False) -> dict:
+    """Wipes demo data and executes the multi-stage funnel. If autopilot=True, automatically executes KYC & FO dispatch."""
     db.execute(delete(WhatsAppLog))
     db.execute(delete(Helper))
     db.execute(delete(SourcingCampaign))
@@ -294,6 +294,23 @@ def run_pipeline(db: Session) -> dict:
     logs4 += ["Funnel: ₹2,000 → 50 scraped → 10 active on WhatsApp → 5 job seekers → 2 Bangalore conversions",
               "Final CAC = ₹1,000 per onboarded helper"]
     stages.append({"stage": 4, "name": "Funnel Filtering", "logs": logs4})
+
+    if autopilot:
+        logs5 = []
+        for h in helpers:
+            verify_kyc(db, h)
+            logs5.append(f"{h.helper_id} ({h.first_name}): Consent received via WhatsApp → Blue Tick awarded ✅ (Quality {h.profile_quality_score}/100)")
+        stages.append({"stage": 5, "name": "Autonomous Digio KYC & Consent Verification", "logs": logs5})
+
+        logs6 = []
+        for h in helpers:
+            if h.base_city == "Bangalore":
+                assign_fo(db, h)
+                logs6.append(f"{h.helper_id} ({h.first_name} @ {h.base_locality}): FO Ankit auto-dispatched → Geo verified → 100% Customer Docket Ready 🏠")
+            else:
+                logs6.append(f"{h.helper_id} ({h.first_name} @ {h.base_city}): Flagged for future Tier-2/regional expansion hub")
+        stages.append({"stage": 6, "name": "Autonomous Field Officer Geo-Router & Docket Creation", "logs": logs6})
+
     db.commit()
     db.refresh(camp)
     return {"campaign": camp, "stages": stages, "helper_ids": [h.helper_id for h in helpers], "parser": parser_used}
