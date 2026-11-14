@@ -73,7 +73,7 @@ def verify_kyc(helper_id: str, db: Session = Depends(get_db)):
 def assign_fo(helper_id: str, db: Session = Depends(get_db)):
     h = _helper_or_404(db, helper_id)
     if h.base_city != "Bangalore":
-        raise HTTPException(400, "Field Officer Ankit only covers Bangalore helpers")
+        raise HTTPException(400, "Field Officer Client only covers Bangalore helpers")
     return agents.assign_fo(db, h)
 
 

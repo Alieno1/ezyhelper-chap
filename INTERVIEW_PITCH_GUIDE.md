@@ -32,7 +32,7 @@
 * An AI LLM reads their messy bios and extracts their full 5-step profile with shift times, skills, and do's & don'ts into PostgreSQL (**80% complete** before a human ever touches it).
 * The bot sends a friendly WhatsApp message in Hindi. When the helper taps *"Yes, I want a job"*, the system gives her a **Free Branded Digital Resume** (the trust-building hook).
 * The helper agrees to KYC on WhatsApp → gets a **Blue Tick (✓)**.
-* Bangalore helpers are automatically assigned to **Field Officer Ankit** with geo-coordinates.
+* Bangalore helpers are automatically assigned to **Field Officer Client** with geo-coordinates.
 * **Cost:** Exact **₹1,000 CAC**. **Time:** 30 seconds.
 
 ---
@@ -48,7 +48,7 @@ Open your live website: **`https://ezyhelper-chap.vercel.app`**
 * **What to say:** *"In the Agent Control Center, we built two modes:"*
   * **Option A: `⚡ Run Full Autopilot (Zero Clicks)`**
     * Click this button.
-    * *"Watch the live terminal: it searches portals, extracts the profiles with AI, sends WhatsApp pings, and automatically awards the Blue Tick and assigns Field Officer Ankit. In 30 seconds, every candidate docket is finished with zero manual clicks."*
+    * *"Watch the live terminal: it searches portals, extracts the profiles with AI, sends WhatsApp pings, and automatically awards the Blue Tick and assigns Field Officer Client. In 30 seconds, every candidate docket is finished with zero manual clicks."*
   * **Option B: `▶ Interactive Mode (Manual Step-by-Step)`**
     * *"If a manager wants human oversight, this mode lets you test each verification step manually."*
 
@@ -93,5 +93,6 @@ Open your live website: **`https://ezyhelper-chap.vercel.app`**
 | **HLPRINxxxxx** | The unique Helper ID format used inside EzyHelpers (e.g., `HLPRIN52445`). |
 | **CAC** | **Customer Acquisition Cost** (how much money was spent to onboard one ready helper). |
 | **Blue Tick KYC** | Verified identity badge powered by automated Digio/UIDAI consent checks. |
-| **FO Geo-Docket** | An in-person address verification where Field Officer Ankit verifies the candidate's home with geo-coordinates. |
+| **FO Geo-Docket** | An in-person address verification where Field Officer Client verifies the candidate's home with geo-coordinates. |
 | **Propensity Score** | A 0–100% compatibility score matching a customer's specific household rules with a helper's preferences. |
+

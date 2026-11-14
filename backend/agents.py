@@ -306,7 +306,7 @@ def run_pipeline(db: Session, autopilot: bool = False) -> dict:
         for h in helpers:
             if h.base_city == "Bangalore":
                 assign_fo(db, h)
-                logs6.append(f"{h.helper_id} ({h.first_name} @ {h.base_locality}): FO Ankit auto-dispatched → Geo verified → 100% Customer Docket Ready 🏠")
+                logs6.append(f"{h.helper_id} ({h.first_name} @ {h.base_locality}): FO Client auto-dispatched → Geo verified → 100% Customer Docket Ready 🏠")
             else:
                 logs6.append(f"{h.helper_id} ({h.first_name} @ {h.base_city}): Flagged for future Tier-2/regional expansion hub")
         stages.append({"stage": 6, "name": "Autonomous Field Officer Geo-Router & Docket Creation", "logs": logs6})
@@ -336,14 +336,14 @@ def verify_kyc(db: Session, h: Helper) -> Helper:
 def assign_fo(db: Session, h: Helper) -> Helper:
     loc = (h.base_locality or "").lower()
     geo = LOCALITIES.get(loc, ("", "", "", ""))[3]
-    h.fo_assigned_name = "Ankit (FO - Bangalore South)"
+    h.fo_assigned_name = "Client (FO - Bangalore South)"
     h.fo_verification_status = "Geo_Verified"
     h.fo_geo_coordinates = geo or "12.9081° N, 77.6476° E (Bannerghatta / Sarjapur Cluster)"
     h.fo_house_photo_url = f"mock://fo-verified-house/{h.helper_id}.jpg"
     h.profile_completion_pct = 100
     h.profile_quality_score = 98
     h.onboarding_stage = "FO_GEO_VERIFIED"
-    _wa(db, h.helper_id, "AGENT_AISENSY", "Field Officer Ankit ne aapke ghar ka geo-verification poora kar liya hai. Customer Docket ready hai! 🏠")
+    _wa(db, h.helper_id, "AGENT_AISENSY", "Field Officer Client ne aapke ghar ka geo-verification poora kar liya hai. Customer Docket ready hai! 🏠")
     db.commit()
     return h
 

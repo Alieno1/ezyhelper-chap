@@ -56,7 +56,7 @@ export default function HelperTable({ helpers, onInspect, onOpenApp, onChanged }
                 <div className="flex flex-wrap gap-1.5 w-60">
                   <button onClick={() => onInspect(h)} className="btn"><MessageSquare size={13} /> WhatsApp</button>
                   <button disabled={h.kyc_blue_tick || !!busy} onClick={() => act("verify-kyc", h)} className="btn"><ShieldCheck size={13} /> {busy === "verify-kyc" + h.helper_id ? "…" : "Digio KYC"}</button>
-                  <button disabled={h.base_city !== "Bangalore" || h.fo_verification_status === "Geo_Verified" || !!busy} onClick={() => act("assign-field-officer", h)} className="btn" title={h.base_city !== "Bangalore" ? "FO covers Bangalore only" : ""}><Truck size={13} /> Dispatch FO Ankit</button>
+                  <button disabled={h.base_city !== "Bangalore" || h.fo_verification_status === "Geo_Verified" || !!busy} onClick={() => act("assign-field-officer", h)} className="btn" title={h.base_city !== "Bangalore" ? "FO covers Bangalore only" : ""}><Truck size={13} /> Dispatch FO Client</button>
                   <button onClick={() => onOpenApp(h)} className="btn bg-blue-600 text-white border-blue-600 hover:bg-blue-700"><Smartphone size={13} /> Partner App</button>
                 </div>
               </td>

@@ -131,7 +131,7 @@ Captures every field from the EzyHelpers Partner App 5-Step Onboarding flow and 
   * `address_proof_status`: `Pending` | `Verified`
   * `kyc_masked_id`: Masked string (`[Aadhaar Redacted]`)
   * `kyc_blue_tick`: Boolean verified flag
-  * `fo_assigned_name`: Assigned Field Officer (`Ankit (FO - Bangalore South)`)
+  * `fo_assigned_name`: Assigned Field Officer (`Client (FO - Bangalore South)`)
   * `fo_verification_status`: `Not_Assigned` | `Route_Assigned` | `Geo_Verified`
   * `fo_geo_coordinates`: Geo-stamp (`12.9116° N, 77.6389° E (HSR / Bellandur Cluster)`)
 
@@ -178,7 +178,7 @@ $$\text{Final CAC} = \frac{\text{Spend (₹2,000)}}{\text{Conversions (2)}} = \t
 Simulates UIDAI/Digio identity consent verification via WhatsApp. Validates identity without storing sensitive PII, sets `kyc_blue_tick = True`, increments profile quality score by +25, and brings completion to 95%.
 
 ### Stage 6: Field Officer Geo-Router & Customer Docket
-Filters candidates residing in target operating hubs (Bangalore). Automatically clusters candidates by locality (Sarjapur, HSR Layout, Bannerghatta, Whitefield), assigns local Field Officer Ankit, tags verified geo-coordinates, brings completion to 100%, and marks the candidate docket ready for customer placement.
+Filters candidates residing in target operating hubs (Bangalore). Automatically clusters candidates by locality (Sarjapur, HSR Layout, Bannerghatta, Whitefield), assigns local Field Officer Client, tags verified geo-coordinates, brings completion to 100%, and marks the candidate docket ready for customer placement.
 
 ---
 
@@ -204,3 +204,4 @@ Filters candidates residing in target operating hubs (Bangalore). Automatically 
 | `POST` | `/api/agent/verify-kyc/{id}` | Triggers Digio KYC identity verification for a specific helper. |
 | `POST` | `/api/agent/assign-field-officer/{id}` | Triggers Field Officer geo-docketing for Bangalore helpers. |
 | `POST` | `/api/agent/match-customer` | Evaluates customer requirement text against active helpers and returns ranked 0–100% propensity matches with trade-off analysis. |
+

@@ -49,12 +49,12 @@ export default function PipelineConsole({ onDone }: { onDone: () => void }) {
       if (autopilot) {
         setLines((l) => [
           ...l,
-          "✔ 100% Autopilot Sourcing & Onboarding Complete! All Bangalore helpers have been verified with Blue Tick KYC and assigned to Field Officer Ankit automatically.",
+          "✔ 100% Autopilot Sourcing & Onboarding Complete! All Bangalore helpers have been verified with Blue Tick KYC and assigned to Field Officer Client automatically.",
         ]);
       } else {
         setLines((l) => [
           ...l,
-          "✔ Sourcing complete (80% profile state). You can now click “Digio KYC” and “Dispatch FO Ankit” on any helper in the CRM table to test interactive verification.",
+          "✔ Sourcing complete (80% profile state). You can now click “Digio KYC” and “Dispatch FO Client” on any helper in the CRM table to test interactive verification.",
         ]);
       }
       onDone();
