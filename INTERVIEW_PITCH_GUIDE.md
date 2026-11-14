@@ -1,6 +1,9 @@
 # EzyHelpers CHAP: Executive Pitch & Interview Preparation Guide
 *(Written in Plain, Simple Language for Your Meeting with Arun & Leadership)*
 
+**Author:** **Himanshu Singh** (NIT Surat Graduate)  
+**LinkedIn:** [linkedin.com/in/himanshu-singh-7ab162243](https://www.linkedin.com/in/himanshu-singh-7ab162243/) | **Portfolio:** [hud-portfolio.vercel.app](https://hud-portfolio.vercel.app/)
+
 ---
 
 ## 1. The 30-Second Elevator Pitch

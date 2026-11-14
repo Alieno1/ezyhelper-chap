@@ -2,6 +2,9 @@
 
 > **Autonomous Agentic Supply Sourcing, LLM Schema Extraction, WhatsApp Lifecycle Automation, Digio KYC & Field Officer Geo-Routing Engine.**
 
+[![Author](https://img.shields.io/badge/Author-Himanshu%20Singh%20(NIT%20Surat)-blue.svg)](https://www.linkedin.com/in/himanshu-singh-7ab162243/)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?logo=linkedin)](https://www.linkedin.com/in/himanshu-singh-7ab162243/)
+[![Portfolio](https://img.shields.io/badge/Portfolio-hud--portfolio.vercel.app-black?logo=vercel)](https://hud-portfolio.vercel.app/)
 [![Live Frontend](https://img.shields.io/badge/Frontend-Vercel%20Live-brightgreen)](https://ezyhelper-chap.vercel.app)
 [![Live Backend](https://img.shields.io/badge/Backend-Render%20Live-blue)](https://ezyhelper-chap.onrender.com)
 [![Swagger API Docs](https://img.shields.io/badge/API_Docs-Swagger%20UI-orange)](https://ezyhelper-chap.onrender.com/docs)
@@ -296,6 +299,16 @@ Frontend will be available at `http://localhost:3000`.
 * **Aadhaar Protection:** Conforms to UIDAI guidelines. No plain-text Aadhaar numbers are persisted in any database table or log file.
 * **CORS Protection:** Configurable allowed origins preventing unauthorized API access.
 * **Database Pooling:** Managed Neon serverless connection pool with SSL enforcement (`sslmode=require`).
+
+---
+
+## 👨‍💻 Author
+
+**Himanshu Singh**  
+*NIT Surat Graduate*
+
+* **LinkedIn:** [linkedin.com/in/himanshu-singh-7ab162243](https://www.linkedin.com/in/himanshu-singh-7ab162243/)
+* **Portfolio:** [hud-portfolio.vercel.app](https://hud-portfolio.vercel.app/)
 
 ---
 

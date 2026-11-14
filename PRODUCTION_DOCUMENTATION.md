@@ -1,6 +1,9 @@
 # EzyHelpers CHAP (Customer Helper Admin Platform)
 ## Production System Specification & Architecture Reference Manual
 
+**Author:** **Himanshu Singh** (NIT Surat Graduate)  
+**LinkedIn:** [linkedin.com/in/himanshu-singh-7ab162243](https://www.linkedin.com/in/himanshu-singh-7ab162243/) | **Portfolio:** [hud-portfolio.vercel.app](https://hud-portfolio.vercel.app/)
+
 ---
 
 ## 1. Executive Summary & Problem Context
