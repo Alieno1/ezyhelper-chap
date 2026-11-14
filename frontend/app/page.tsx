@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { Database, RefreshCw } from "lucide-react";
+import { Database, Moon, RefreshCw, Sun } from "lucide-react";
 import { api, type Campaign, type Helper } from "@/lib/api";
 import Funnel from "@/components/Funnel";
 import PipelineConsole from "@/components/PipelineConsole";
@@ -17,6 +17,21 @@ export default function Home() {
   const [app, setApp] = useState<Helper | null>(null);
   const [health, setHealth] = useState<{ database: string; gemini: boolean } | null>(null);
   const [err, setErr] = useState("");
+  const [dark, setDark] = useState(false);
+
+  useEffect(() => {
+    const saved = typeof window !== "undefined" ? localStorage.getItem("chap_theme") : null;
+    const isDark = saved === "dark";
+    setDark(isDark);
+    document.documentElement.classList.toggle("dark", isDark);
+  }, []);
+
+  function toggleTheme() {
+    const next = !dark;
+    setDark(next);
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("chap_theme", next ? "dark" : "light");
+  }
 
   const load = useCallback(async () => {
     try {
@@ -38,6 +53,10 @@ export default function Home() {
         </div>
         <div className="flex items-center gap-2 text-xs text-slate-500">
           {health && <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1"><Database size={12} /> {health.database} · Gemini {health.gemini ? "on" : "fallback parser"}</span>}
+          <button onClick={toggleTheme} className="btn" aria-label="Toggle Dark Mode" title="Switch between Light and Dark Mode">
+            {dark ? <Sun size={13} className="text-amber-400" /> : <Moon size={13} />}
+            {dark ? "Light Mode" : "Dark Mode"}
+          </button>
           <button onClick={load} className="btn" aria-label="Refresh"><RefreshCw size={13} /> Refresh</button>
         </div>
       </header>
