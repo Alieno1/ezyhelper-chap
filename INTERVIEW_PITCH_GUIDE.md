@@ -1,7 +1,7 @@
 # EzyHelpers CHAP: Executive Pitch & Interview Preparation Guide
 *(Written in Plain, Simple Language for Your Meeting with Arun & Leadership)*
 
-**Author:** **Himanshu Singh** (Computer Science Engineer - CSE, NIT Surat Graduate)  
+**Author:** **Himanshu Singh** (AI Backend Engineer | NIT Surat CSE Graduate)  
 **LinkedIn:** [linkedin.com/in/himanshu-singh-7ab162243](https://www.linkedin.com/in/himanshu-singh-7ab162243/) | **Portfolio:** [hud-portfolio.vercel.app](https://hud-portfolio.vercel.app/)
 
 ---
